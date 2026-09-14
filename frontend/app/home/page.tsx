@@ -6,12 +6,29 @@ import { onAuthStateChanged, signOut, User } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { auth } from "../../lib/firebase";
 
+type DayPlan = {
+  day: number;
+  title: string;
+  morning: string;
+  afternoon: string;
+  evening: string;
+  food: string[];
+  tips: string[];
+};
+
+type Itinerary = {
+  destination: string;
+  summary: string;
+  days: DayPlan[];
+  travel_tips: string[];
+};
+
 type TravelResponse = {
   success: boolean;
   destination: string;
   days: number;
   travelers: number;
-  itinerary: string;
+  itinerary: Itinerary;
 };
 
 export default function HomePage() {
@@ -30,7 +47,6 @@ export default function HomePage() {
     useState<TravelResponse | null>(null);
   const [errorMessage, setErrorMessage] = useState("");
 
-  // Check Firebase authentication
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       if (!currentUser) {
@@ -45,13 +61,11 @@ export default function HomePage() {
     return () => unsubscribe();
   }, [router]);
 
-  // Logout
   const handleLogout = async () => {
     await signOut(auth);
     router.replace("/login");
   };
 
-  // Generate itinerary
   const startPlanning = async () => {
     if (!destination.trim()) {
       setErrorMessage("Please enter a destination.");
@@ -105,7 +119,6 @@ export default function HomePage() {
     }
   };
 
-  // Quick destination suggestions
   const suggestions = [
     "5 day trip to Paris",
     "Weekend in Bali",
@@ -131,7 +144,7 @@ export default function HomePage() {
 
   if (checkingAuth) {
     return (
-      <main className="min-h-screen flex items-center justify-center bg-slate-950 text-white">
+      <main className="flex min-h-screen items-center justify-center bg-slate-950 text-white">
         <div className="text-center">
           <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-4 border-white/20 border-t-white" />
           <p className="text-white/70">Checking your account...</p>
@@ -142,8 +155,8 @@ export default function HomePage() {
 
   return (
     <main className="min-h-screen bg-slate-950 text-white">
-      {/* Header */}
-      <header className="border-b border-white/10 bg-slate-950/90 backdrop-blur">
+      {/* HEADER */}
+      <header className="sticky top-0 z-30 border-b border-white/10 bg-slate-950/90 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5">
           <Link href="/" className="text-2xl font-bold tracking-tight">
             ✈️ JourneyBuddy
@@ -155,9 +168,7 @@ export default function HomePage() {
                 {user?.displayName || "Traveller"}
               </p>
 
-              <p className="text-xs text-white/50">
-                {user?.email}
-              </p>
+              <p className="text-xs text-white/50">{user?.email}</p>
             </div>
 
             <button
@@ -170,9 +181,8 @@ export default function HomePage() {
         </div>
       </header>
 
-      {/* Main */}
+      {/* HERO */}
       <section className="mx-auto max-w-7xl px-6 py-12">
-        {/* Hero */}
         <div className="mx-auto max-w-4xl text-center">
           <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/70">
             🌍 AI-powered travel planning
@@ -188,10 +198,9 @@ export default function HomePage() {
           </p>
         </div>
 
-        {/* Planner */}
+        {/* PLANNER */}
         <div className="mx-auto mt-10 max-w-4xl rounded-3xl border border-white/10 bg-white/[0.04] p-6 shadow-2xl sm:p-8">
           <div className="grid gap-5">
-            {/* Destination */}
             <div>
               <label className="mb-2 block text-sm font-medium text-white/80">
                 Where do you want to go?
@@ -206,12 +215,11 @@ export default function HomePage() {
                     startPlanning();
                   }
                 }}
-                placeholder="Paris, Tokyo, Bali, New York..."
+                placeholder="Paris, Tokyo, Bali, Mangalore..."
                 className="w-full rounded-2xl border border-white/10 bg-slate-900 px-5 py-4 text-white outline-none transition placeholder:text-white/30 focus:border-white/30"
               />
             </div>
 
-            {/* Days + Travelers */}
             <div className="grid gap-5 sm:grid-cols-2">
               <div>
                 <label className="mb-2 block text-sm font-medium text-white/80">
@@ -244,7 +252,6 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* Interests */}
             <div>
               <label className="mb-2 block text-sm font-medium text-white/80">
                 Interests
@@ -263,14 +270,12 @@ export default function HomePage() {
               </p>
             </div>
 
-            {/* Error */}
             {errorMessage && (
               <div className="rounded-2xl border border-red-400/20 bg-red-400/10 px-5 py-4 text-sm text-red-200">
                 ⚠️ {errorMessage}
               </div>
             )}
 
-            {/* Button */}
             <button
               onClick={startPlanning}
               disabled={isPlanning}
@@ -288,7 +293,7 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Suggestions */}
+        {/* SUGGESTIONS */}
         <div className="mx-auto mt-6 max-w-4xl">
           <p className="mb-3 text-sm text-white/40">Try one of these:</p>
 
@@ -305,57 +310,212 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* AI Result */}
+        {/* TRIP RESULT */}
         {planResponse && (
-          <section className="mx-auto mt-12 max-w-5xl">
-            {/* Trip summary */}
-            <div className="mb-6 rounded-3xl border border-white/10 bg-white/[0.04] p-6 sm:p-8">
-              <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+          <section className="mx-auto mt-14 max-w-6xl">
+            {/* SUMMARY */}
+            <div className="rounded-3xl border border-white/10 bg-gradient-to-br from-white/[0.09] to-white/[0.03] p-6 shadow-2xl sm:p-8">
+              <div className="flex flex-col justify-between gap-6 md:flex-row md:items-center">
                 <div>
                   <p className="text-sm font-medium uppercase tracking-[0.2em] text-white/40">
                     Your AI-generated trip
                   </p>
 
-                  <h2 className="mt-2 text-3xl font-bold">
-                    🌍 {planResponse.destination}
+                  <h2 className="mt-2 text-4xl font-bold sm:text-5xl">
+                    🌍 {planResponse.itinerary.destination}
                   </h2>
+
+                  <p className="mt-4 max-w-3xl text-base leading-7 text-white/60">
+                    {planResponse.itinerary.summary}
+                  </p>
                 </div>
 
-                <div className="flex gap-3">
-                  <div className="rounded-2xl bg-white/5 px-4 py-3 text-center">
-                    <p className="text-2xl font-bold">
+                <div className="flex shrink-0 gap-3">
+                  <div className="rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-center">
+                    <p className="text-3xl font-bold">
                       {planResponse.days}
                     </p>
-                    <p className="text-xs text-white/40">Days</p>
+
+                    <p className="text-xs uppercase tracking-wider text-white/40">
+                      Days
+                    </p>
                   </div>
 
-                  <div className="rounded-2xl bg-white/5 px-4 py-3 text-center">
-                    <p className="text-2xl font-bold">
+                  <div className="rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-center">
+                    <p className="text-3xl font-bold">
                       {planResponse.travelers}
                     </p>
-                    <p className="text-xs text-white/40">Travelers</p>
+
+                    <p className="text-xs uppercase tracking-wider text-white/40">
+                      Travelers
+                    </p>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Itinerary */}
-            <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-6 sm:p-10">
-              <div className="mb-6 flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10">
-                  🗺️
+            {/* DAY CARDS */}
+            <div className="mt-8 space-y-6">
+              {planResponse.itinerary.days.map((day) => (
+                <article
+                  key={day.day}
+                  className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-xl"
+                >
+                  {/* DAY HEADER */}
+                  <div className="border-b border-white/10 bg-white/[0.04] p-6 sm:p-7">
+                    <div className="flex items-start gap-4">
+                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white text-lg font-bold text-slate-950">
+                        {day.day}
+                      </div>
+
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/40">
+                          Day {day.day}
+                        </p>
+
+                        <h3 className="mt-1 text-2xl font-bold">
+                          {day.title}
+                        </h3>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* DAY CONTENT */}
+                  <div className="grid gap-5 p-6 md:grid-cols-3 sm:p-7">
+                    {/* MORNING */}
+                    <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-5">
+                      <div className="mb-4 flex items-center gap-3">
+                        <span className="text-2xl">🌅</span>
+
+                        <div>
+                          <h4 className="font-semibold">Morning</h4>
+                          <p className="text-xs text-white/40">
+                            Start the day
+                          </p>
+                        </div>
+                      </div>
+
+                      <p className="text-sm leading-7 text-white/65">
+                        {day.morning}
+                      </p>
+                    </div>
+
+                    {/* AFTERNOON */}
+                    <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-5">
+                      <div className="mb-4 flex items-center gap-3">
+                        <span className="text-2xl">☀️</span>
+
+                        <div>
+                          <h4 className="font-semibold">Afternoon</h4>
+                          <p className="text-xs text-white/40">
+                            Explore & experience
+                          </p>
+                        </div>
+                      </div>
+
+                      <p className="text-sm leading-7 text-white/65">
+                        {day.afternoon}
+                      </p>
+                    </div>
+
+                    {/* EVENING */}
+                    <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-5">
+                      <div className="mb-4 flex items-center gap-3">
+                        <span className="text-2xl">🌙</span>
+
+                        <div>
+                          <h4 className="font-semibold">Evening</h4>
+                          <p className="text-xs text-white/40">
+                            End the day
+                          </p>
+                        </div>
+                      </div>
+
+                      <p className="text-sm leading-7 text-white/65">
+                        {day.evening}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* FOOD + TIPS */}
+                  <div className="grid gap-5 border-t border-white/10 p-6 md:grid-cols-2 sm:p-7">
+                    <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+                      <div className="mb-4 flex items-center gap-3">
+                        <span className="text-2xl">🍜</span>
+
+                        <h4 className="font-semibold">
+                          Food to try
+                        </h4>
+                      </div>
+
+                      <ul className="space-y-2">
+                        {day.food.map((item, index) => (
+                          <li
+                            key={index}
+                            className="flex gap-2 text-sm text-white/65"
+                          >
+                            <span className="text-white/30">•</span>
+                            <span>{item}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+                      <div className="mb-4 flex items-center gap-3">
+                        <span className="text-2xl">💡</span>
+
+                        <h4 className="font-semibold">
+                          Day tips
+                        </h4>
+                      </div>
+
+                      <ul className="space-y-2">
+                        {day.tips.map((item, index) => (
+                          <li
+                            key={index}
+                            className="flex gap-2 text-sm text-white/65"
+                          >
+                            <span className="text-white/30">•</span>
+                            <span>{item}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
+
+            {/* GENERAL TRAVEL TIPS */}
+            <div className="mt-8 rounded-3xl border border-white/10 bg-white/[0.04] p-6 sm:p-8">
+              <div className="mb-6 flex items-center gap-4">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10 text-xl">
+                  🎒
                 </div>
 
                 <div>
-                  <h3 className="font-semibold">Your itinerary</h3>
+                  <h3 className="text-xl font-semibold">
+                    Travel tips
+                  </h3>
+
                   <p className="text-sm text-white/40">
-                    Created by JourneyBuddy AI
+                    Helpful things to keep in mind
                   </p>
                 </div>
               </div>
 
-              <div className="whitespace-pre-wrap text-[15px] leading-7 text-white/75">
-                {planResponse.itinerary}
+              <div className="grid gap-3 sm:grid-cols-2">
+                {planResponse.itinerary.travel_tips.map(
+                  (tip, index) => (
+                    <div
+                      key={index}
+                      className="rounded-2xl border border-white/10 bg-slate-900/50 p-4 text-sm leading-6 text-white/65"
+                    >
+                      {tip}
+                    </div>
+                  )
+                )}
               </div>
             </div>
           </section>
