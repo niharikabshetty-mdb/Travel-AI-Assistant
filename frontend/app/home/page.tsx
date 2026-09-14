@@ -47,6 +47,7 @@ export default function HomePage() {
     useState<TravelResponse | null>(null);
   const [errorMessage, setErrorMessage] = useState("");
 
+  // Check Firebase authentication
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       if (!currentUser) {
@@ -61,11 +62,13 @@ export default function HomePage() {
     return () => unsubscribe();
   }, [router]);
 
+  // Logout
   const handleLogout = async () => {
     await signOut(auth);
     router.replace("/login");
   };
 
+  // Generate travel plan
   const startPlanning = async () => {
     if (!destination.trim()) {
       setErrorMessage("Please enter a destination.");
@@ -82,10 +85,21 @@ export default function HomePage() {
         .map((item) => item.trim())
         .filter((item) => item.length > 0);
 
+      // Get Firebase ID token
+      const idToken = await auth.currentUser?.getIdToken();
+
+      if (!idToken) {
+        throw new Error(
+          "Your login session has expired. Please log in again."
+        );
+      }
+
+      // Send authenticated request to Node.js
       const response = await fetch("http://localhost:5000/api/plan", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${idToken}`,
         },
         body: JSON.stringify({
           destination: destination.trim(),
@@ -142,6 +156,7 @@ export default function HomePage() {
     }
   };
 
+  // Authentication loading screen
   if (checkingAuth) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-slate-950 text-white">
@@ -310,7 +325,7 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* TRIP RESULT */}
+        {/* RESULT */}
         {planResponse && (
           <section className="mx-auto mt-14 max-w-6xl">
             {/* SUMMARY */}
@@ -380,9 +395,8 @@ export default function HomePage() {
                     </div>
                   </div>
 
-                  {/* DAY CONTENT */}
+                  {/* MORNING / AFTERNOON / EVENING */}
                   <div className="grid gap-5 p-6 md:grid-cols-3 sm:p-7">
-                    {/* MORNING */}
                     <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-5">
                       <div className="mb-4 flex items-center gap-3">
                         <span className="text-2xl">🌅</span>
@@ -400,7 +414,6 @@ export default function HomePage() {
                       </p>
                     </div>
 
-                    {/* AFTERNOON */}
                     <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-5">
                       <div className="mb-4 flex items-center gap-3">
                         <span className="text-2xl">☀️</span>
@@ -418,7 +431,6 @@ export default function HomePage() {
                       </p>
                     </div>
 
-                    {/* EVENING */}
                     <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-5">
                       <div className="mb-4 flex items-center gap-3">
                         <span className="text-2xl">🌙</span>
@@ -437,7 +449,7 @@ export default function HomePage() {
                     </div>
                   </div>
 
-                  {/* FOOD + TIPS */}
+                  {/* FOOD / TIPS */}
                   <div className="grid gap-5 border-t border-white/10 p-6 md:grid-cols-2 sm:p-7">
                     <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
                       <div className="mb-4 flex items-center gap-3">
